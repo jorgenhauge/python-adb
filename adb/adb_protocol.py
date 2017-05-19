@@ -334,10 +334,11 @@ class AdbMessage(object):
     Returns:
       The local connection id.
     """
+    data = '{}\0'.format(destination).encode()
     local_id = 1
     msg = cls(
         command='OPEN', arg0=local_id, arg1=0,
-        data=destination + '\0')
+        data=data)
     msg.Send(usb, timeout_ms)
     cmd, remote_id, their_local_id, _ = cls.Read(usb, ['CLSE', 'OKAY'],
                                                  timeout_ms=timeout_ms)
