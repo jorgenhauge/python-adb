@@ -87,7 +87,7 @@ class _AdbConnection(object):
     self.timeout_ms = timeout_ms
 
   def _Send(self, command, arg0, arg1, data=''):
-    message = AdbMessage(command, arg0, arg1, data)
+    message = AdbMessage(command, arg0, arg1, data.encode())
     message.Send(self.usb, self.timeout_ms)
 
   def Write(self, data):
