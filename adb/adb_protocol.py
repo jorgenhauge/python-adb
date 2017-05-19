@@ -276,9 +276,10 @@ class AdbMessage(object):
       InvalidResponseError: When the device does authentication in an
           unexpected way.
     """
+    data = 'host::{}\0'.format(banner).encode()
     msg = cls(
         command='CNXN', arg0=VERSION, arg1=MAX_ADB_DATA,
-        data='host::%s\0' % banner)
+        data=data)
     msg.Send(usb)
     cmd, arg0, arg1, banner = cls.Read(usb, ['CNXN', 'AUTH'])
     if cmd == 'AUTH':
