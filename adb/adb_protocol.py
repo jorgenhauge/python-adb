@@ -186,7 +186,7 @@ class AdbMessage(object):
     def CalculateChecksum(data):
         # The checksum is just a sum of all the bytes. I swear.
         if isinstance(data, bytes):
-            return sum(map(ord, data.decode('ascii'))) & 0xFFFFFFFF
+            return sum(map(ord, data.decode('latin-1'))) & 0xFFFFFFFF
         return sum(map(ord, data)) & 0xFFFFFFFF
 
     def Pack(self):
@@ -234,7 +234,8 @@ class AdbMessage(object):
             while data_length > 0:
                 temp = usb.BulkRead(data_length, timeout_ms)
                 if isinstance(temp, bytes):
-                    data += temp.decode('ascii')
+                    print('temp: {}'.format(temp))
+                    data += temp.decode('latin-1')
                 else:
                     data += temp
 
