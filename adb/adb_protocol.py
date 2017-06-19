@@ -92,7 +92,7 @@ class _AdbConnection(object):
 
     def Write(self, data):
         """Write a packet and expect an Ack."""
-        self._Send('WRTE', arg0=self.local_id, arg1=self.remote_id, data=data)
+        self._Send('WRTE'.encode(), arg0=self.local_id, arg1=self.remote_id, data=data)
         # Expect an ack in response.
         cmd, okay_data = self.ReadUntil('OKAY')
         if cmd != 'OKAY':
@@ -105,7 +105,7 @@ class _AdbConnection(object):
         return len(data)
 
     def Okay(self):
-        self._Send('OKAY', arg0=self.local_id, arg1=self.remote_id)
+        self._Send('OKAY'.encode(), arg0=self.local_id, arg1=self.remote_id)
 
     def ReadUntil(self, *expected_cmds):
         """Read a packet, Ack any write packets."""
@@ -172,7 +172,7 @@ class AdbMessage(object):
     connections = 0
 
     def __init__(self, command=None, arg0=None, arg1=None, data=''):
-        self.command = self.commands[command]
+        self.command = self.commands[command.decode()]
         self.magic = self.command ^ 0xFFFFFFFF
         self.arg0 = arg0
         self.arg1 = arg1
@@ -280,7 +280,7 @@ class AdbMessage(object):
         """
         data = 'host::{}\0'.format(banner).encode()
         msg = cls(
-            command='CNXN', arg0=VERSION, arg1=MAX_ADB_DATA,
+            command='CNXN'.encode(), arg0=VERSION, arg1=MAX_ADB_DATA,
             data=data)
         msg.Send(usb)
         cmd, arg0, arg1, banner = cls.Read(usb, ['CNXN', 'AUTH'])
@@ -340,7 +340,7 @@ class AdbMessage(object):
         data = '{}\0'.format(destination).encode()
         local_id = 1
         msg = cls(
-            command='OPEN', arg0=local_id, arg1=0,
+            command='OPEN'.encode(), arg0=local_id, arg1=0,
             data=data)
         msg.Send(usb, timeout_ms)
         cmd, remote_id, their_local_id, _ = cls.Read(usb, ['CLSE', 'OKAY'],
