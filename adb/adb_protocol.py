@@ -207,6 +207,7 @@ class AdbMessage(object):
     def Send(self, usb, timeout_ms=None):
         """Send this message over USB."""
         usb.BulkWrite(self.Pack(), timeout_ms)
+        print('adb_protocol-->Send-->data: {} and type(): {}'.format(self.data, type(self.data)))
         usb.BulkWrite(self.data, timeout_ms)
 
     @classmethod
