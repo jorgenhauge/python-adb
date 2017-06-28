@@ -287,12 +287,12 @@ class TcpHandle(object):
 
     Host may be an IP address or a host name.
     """
-    if ':' in serial:
-      (host, port) = serial.split(':')
+    if b':' in serial:
+      (host, port) = serial.split(b':')
     else:
       host = serial
       port = 5555
-    self._serial_number = '%s:%s' % (host, port)
+    self._serial_number = b'%s:%s' % (host, port)
 
     self._connection = socket.create_connection((host, port))
 
