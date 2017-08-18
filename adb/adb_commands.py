@@ -25,6 +25,7 @@ All timeouts are in milliseconds.
 import io
 import os
 import socket
+import multiprocessing
 
 from adb import adb_protocol
 from adb import common
@@ -45,6 +46,8 @@ except ImportError:
   # Ignore this error when M2Crypto is not installed, there are other options.
   pass
 
+class TCPTimeout(Exception):
+    pass
 
 class AdbCommands(object):
   """Exposes adb-like methods for use.
@@ -68,7 +71,7 @@ class AdbCommands(object):
     used instead of a USB connection.
     """
     if serial and b':' in serial:
-        handle = common.TcpHandle(serial)
+        handle = common.TcpHandle(serial,timeout=default_timeout_ms)
     else:
         handle = common.UsbHandle.FindAndOpen(
             DeviceIsAvailable, port_path=port_path, serial=serial,
@@ -96,7 +99,22 @@ class AdbCommands(object):
     """
     if not banner:
       banner = socket.gethostname().encode()
-    device_state = cls.protocol_handler.Connect(usb, banner=banner, **kwargs)
+    if isinstance(usb, common.TcpHandle):
+        def f(q):
+            device_state = cls.protocol_handler.Connect(usb, banner=banner, **kwargs)
+            q.put([device_state])
+        q = multiprocessing.Queue()
+        p = multiprocessing.Process(target=f, args=(q,))
+        p.start()
+        p.join(usb._timeout)
+        if p.is_alive():
+            msg = 'TCP connection to %s timed out (%ss)' % (
+                    usb._serial_number,usb._timeout)
+            p.terminate()
+            raise TCPTimeout(msg)
+        device_state = q.get()[0]
+    else:
+        device_state = cls.protocol_handler.Connect(usb, banner=banner, **kwargs)
     # Remove banner and colons after device state (state::banner)
     device_state = device_state.split(b':')[0]
     return cls(usb, device_state)
