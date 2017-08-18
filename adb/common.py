@@ -278,9 +278,12 @@ class UsbHandle(object):
 class TcpHandle(object):
   """TCP connection object.
 
-     Provides same interface as UsbHandle but ignores timeout."""
+     Provides same interface as UsbHandle, sets a timout
+     which is handled by running the initial connection
+     adb_protocol.AdbMessage.Connect(tcp) as a separate
+     process with a timout (See adb_commands.AdbCommands.Connect())."""
 
-  def __init__(self, serial):
+  def __init__(self, serial, timeout=None):
     """Initialize the TCP Handle.
     Arguments:
       serial: Android device serial of the form host or host:port.
@@ -292,6 +295,10 @@ class TcpHandle(object):
     else:
       host = serial
       port = 5555
+    if timeout:
+        self._timeout = float (timeout/1000)
+    else:
+        self._timeout = 60
     self._serial_number = '%s:%s' % (host, port)
 
     self._connection = socket.create_connection((host, port))
