@@ -19,6 +19,7 @@ import logging
 import socket
 import threading
 import weakref
+import select
 
 import libusb1
 import usb1
@@ -43,6 +44,10 @@ def InterfaceMatcher(clazz, subclass, protocol):
       if GetInterface(setting) == interface:
         return setting
   return Matcher
+
+
+class TCPTimeout(Exception):
+    pass
 
 
 class UsbHandle(object):
@@ -278,12 +283,9 @@ class UsbHandle(object):
 class TcpHandle(object):
   """TCP connection object.
 
-     Provides same interface as UsbHandle, sets a timout
-     which is handled by running the initial connection
-     adb_protocol.AdbMessage.Connect(tcp) as a separate
-     process with a timout (See adb_commands.AdbCommands.Connect())."""
+     Provides same interface as UsbHandle. """
 
-  def __init__(self, serial, timeout=None):
+  def __init__(self, serial, timeout_ms=None):
     """Initialize the TCP Handle.
     Arguments:
       serial: Android device serial of the form host or host:port.
@@ -295,13 +297,11 @@ class TcpHandle(object):
     else:
       host = serial
       port = 5555
-    if timeout:
-        self._timeout = float (timeout/1000)
-    else:
-        self._timeout = 60
+    self._timeout_ms = timeout_ms or DEFAULT_TIMEOUT_MS
     self._serial_number = '%s:%s' % (host, port)
 
     self._connection = socket.create_connection((host, port))
+    self._connection.setblocking(0)
 
   @property
   def serial_number(self):
@@ -310,11 +310,16 @@ class TcpHandle(object):
   def BulkWrite(self, data, timeout=None):
       return self._connection.sendall(data)
 
-  def BulkRead(self, numbytes, timeout=None):
-      return self._connection.recv(numbytes)
+  def BulkRead(self, numbytes, timeout_ms=None):
+      tsec = float(self.Timeout(timeout_ms) / 1000)
+      ready = select.select([self._connection], [], [], tsec)
+      if ready[0]:
+        return self._connection.recv(numbytes)
+      msg = 'Reading from {} timed out (Timeout {}s)'.format(self._serial_number,tsec)
+      raise TCPTimeout(msg)
 
   def Timeout(self, timeout_ms):
-      return timeout_ms
+      return timeout_ms if timeout_ms is not None else self._timeout_ms
 
   def Close(self):
       return self._connection.close()
