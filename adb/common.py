@@ -300,7 +300,15 @@ class TcpHandle(object):
     self._timeout_ms = timeout_ms or DEFAULT_TIMEOUT_MS
     self._serial_number = '%s:%s' % (host, port)
 
-    self._connection = socket.create_connection((host, port))
+    try:
+      tout = float(self._timeout_ms / 1000)
+      self._connection = socket.create_connection(
+              (host, port),
+              timeout = tout )
+    except socket.timeout as e:
+      msg = 'Creating connection to {} timed out (Timeout {}s)'.format(self._serial_number,tout)
+      raise TCPTimeout(msg)
+
     self._connection.setblocking(0)
 
   @property
