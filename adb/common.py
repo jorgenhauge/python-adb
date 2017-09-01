@@ -301,7 +301,7 @@ class TcpHandle(object):
     self._serial_number = '%s:%s' % (host, port)
 
     try:
-      tout = float(self._timeout_ms / 1000)
+      tout = float(int(self._timeout_ms) / 1000)
       self._connection = socket.create_connection(
               (host, port),
               timeout = tout )
@@ -319,7 +319,8 @@ class TcpHandle(object):
       return self._connection.sendall(data)
 
   def BulkRead(self, numbytes, timeout_ms=None):
-      tsec = float(self.Timeout(timeout_ms) / 1000)
+      #tsec = float(self.Timeout(timeout_ms) / 1000)
+      tsec = int(self._timeout_ms) / 1000
       ready = select.select([self._connection], [], [], tsec)
       if ready[0]:
         return self._connection.recv(numbytes)
