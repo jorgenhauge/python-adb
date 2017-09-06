@@ -297,14 +297,12 @@ class TcpHandle(object):
     else:
       host = serial
       port = 5555
-    self._timeout_ms = timeout_ms or DEFAULT_TIMEOUT_MS
+    self._timeout_ms = timeout_ms if timeout_ms else DEFAULT_TIMEOUT_MS
     self._serial_number = '%s:%s' % (host, port)
 
     try:
       tout = float(int(self._timeout_ms) / 1000)
-      self._connection = socket.create_connection(
-              (host, port),
-              timeout = tout )
+      self._connection = socket.create_connection((host,port),timeout=tout)
     except socket.timeout as e:
       msg = 'Creating connection to {} timed out (Timeout {}s)'.format(self._serial_number,tout)
       raise TCPTimeout(msg)
@@ -319,8 +317,8 @@ class TcpHandle(object):
       return self._connection.sendall(data)
 
   def BulkRead(self, numbytes, timeout_ms=None):
-      #tsec = float(self.Timeout(timeout_ms) / 1000)
-      tsec = int(self._timeout_ms) / 1000
+      tmsec = self.Timeout(timeout_ms)
+      tsec = float(tmsec / 1000)
       ready = select.select([self._connection], [], [], tsec)
       if ready[0]:
         return self._connection.recv(numbytes)
