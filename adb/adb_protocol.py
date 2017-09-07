@@ -403,3 +403,77 @@ class AdbMessage(object):
         timeout_ms=timeout_ms)
     for data in connection.ReadUntilClose():
       yield data.decode('utf8')
+MAX_TIMEOUT = 30
+RETRY_INTERVAL = 10
+import socket
+
+
+class ConnectionError(Exception):
+    pass
+
+
+class ProbeError(Exception):
+    pass
+
+
+class SocketProber:
+
+    @staticmethod
+    def wait_for_reboot(host, port):
+        SocketProber.wait_for_down(host, port)
+        SocketProber.wait_for_up(host, port)
+
+    @staticmethod
+    def wait_for_down(host, port, timeout=MAX_TIMEOUT):
+        stime = time.time()
+        ctime = stime
+        etime = stime + timeout
+        while ctime < etime:
+            try:
+                time.sleep(RETRY_INTERVAL)
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(1)
+                print("Connecting to {}:{}".format(host, port))
+                sock.connect((host, port))
+                sock.close()
+            except(socket.timeout, socket.gaierror, ConnectionError):
+                print(
+                    "System went down after {:.2f}".format(ctime - stime))
+                return
+            except Exception:
+                print(
+                    "Ignoring unexpected exception in wait_for_down,"
+                    " please investigate", exc_info=True)
+            finally:
+                ctime = time.time()
+
+        raise ProbeError(
+            "System failed to go down after {:.2f}".format(timeout))
+
+    @staticmethod
+    def wait_for_up(host, port, timeout=MAX_TIMEOUT):
+        last_exc = None
+
+        stime = time.time()
+        ctime = stime
+        etime = stime + timeout
+        while ctime < etime:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                print("Connecting to {}:{}".format(host, port))
+                sock.connect((host, port))
+                # data = sock.recv(50)
+                sock.close()
+                print("Retrieved data: {}".format(data))
+                if data:
+                    print("System came online after {:.2f}".format(
+                        ctime - stime))
+                    return
+            except Exception as e:
+                last_exc = e
+            time.sleep(RETRY_INTERVAL)
+            ctime = time.time()
+        exc_msg = "System still offline after {:.2f}, Last exception {}".format(
+            timeout, last_exc)
+        print(exc_msg)
+        raise ProbeError(exc_msg)
