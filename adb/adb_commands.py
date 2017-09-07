@@ -215,7 +215,7 @@ class AdbCommands(object):
         self.protocol_handler.Open(self.handle, b'reboot:%s' % destination)
         host, port = self.handle._connection.getpeername()
         SocketProber.wait_for_reboot(host, port)
-        self.connection.Close()
+        return self.ConnectDevice(serial='{}:{}'.format(host, port).encode())
 
     def RebootBootloader(self):
         """Reboot device into fastboot."""
