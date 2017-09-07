@@ -27,6 +27,7 @@ import os
 import socket
 
 from adb import adb_protocol
+from adb.adb_protocol import SocketProber
 from adb import common
 from adb import filesync_protocol
 
@@ -200,14 +201,6 @@ class AdbCommands(object):
     connection.Close()
     return listing
 
-  def Reboot(self, destination=b''):
-    """Reboot the device.
-
-    Args:
-      destination: Specify 'bootloader' for fastboot.
-    """
-    self.protocol_handler.Open(self.handle, b'reboot:%s' % destination)
-
   def RebootBootloader(self):
     """Reboot device into fastboot."""
     self.Reboot(b'bootloader')
@@ -247,3 +240,14 @@ class AdbCommands(object):
       options: Arguments to pass to 'logcat'.
     """
     return self.StreamingShell('logcat %s' % options, timeout_ms)
+    def Reboot(self, destination=b''):
+        """Reboot the device.
+
+        Args:
+          destination: Specify 'bootloader' for fastboot.
+        """
+        self.protocol_handler.Open(self.handle, b'reboot:%s' % destination)
+        host, port = self.handle._connection.getpeername()
+        SocketProber.wait_for_reboot(host, port)
+        self.connection.Close()
+
