@@ -467,12 +467,12 @@ class SocketProber:
                 print("Connecting to {}:{}".format(host, port))
                 sock.connect((host, port))
                 # data = sock.recv(50)
-                sock.close()
-                print("Retrieved data: {}".format(data))
-                if data:
-                    print("System came online after {:.2f}".format(
-                        ctime - stime))
-                    return
+                # sock.close()
+                # print("Retrieved data: {}".format(data))
+                # if data:
+                print("System came online after {:.2f}".format(
+                    ctime - stime))
+                return
             except Exception as e:
                 last_exc = e
             time.sleep(RETRY_INTERVAL)
