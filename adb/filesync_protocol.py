@@ -21,11 +21,14 @@ import collections
 import stat
 import struct
 import time
+import logging
 
 import libusb1
 
 from adb import adb_protocol
 from adb import usb_exceptions
+
+log = logging.getLogger(__name__)
 
 # Default mode for pushed files.
 DEFAULT_PUSH_MODE = stat.S_IFREG | stat.S_IRWXU | stat.S_IRWXG
@@ -106,7 +109,7 @@ class FilesyncProtocol(object):
 
     cnxn = FileSyncConnection(connection, b'<2I')
     cnxn.Send(b'SEND', fileinfo)
-
+    log.info("Started push")
     while True:
       data = datafile.read(MAX_PUSH_DATA)
       if not data:
