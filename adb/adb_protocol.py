@@ -163,7 +163,7 @@ class AdbMessage(object):
     CLOSE(device_id, host_id, '')
   """
 
-  ids = [b'SYNC', b'CNXN', b'AUTH', b'OPEN', b'OKAY', b'CLSE', b'WRTE']
+  ids = [b'SYNC', b'CNXN', b'AUTH', b'OPEN', b'OKAY', b'CLSE', b'WRTE', b'FAIL']
   commands, constants = MakeWireIDs(ids)
   # An ADB message is 6 words in little-endian.
   format = b'<6I'
