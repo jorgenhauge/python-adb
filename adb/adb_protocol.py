@@ -224,6 +224,8 @@ class AdbMessage(object):
     start = time.time()
     while True:
       msg = usb.BulkRead(24, timeout_ms)
+      if len(msg) != 24:
+        msg = msg.ljust(24, b"\x00")
       cmd, arg0, arg1, data_length, data_checksum = cls.Unpack(msg)
       command = cls.constants.get(cmd)
       if not command:
